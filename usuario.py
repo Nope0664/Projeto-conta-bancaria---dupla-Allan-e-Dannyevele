@@ -1,5 +1,6 @@
 from exceçoes import LoginInvalidoError
 
+
 class Usuario:
     usuarios_registrados = {}
 
