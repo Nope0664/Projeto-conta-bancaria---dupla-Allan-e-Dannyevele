@@ -1,27 +1,29 @@
-#Interface base para contas
+from exceçoes import SaldoInsuficienteError
+
 class Conta:
     def __init__(self, titular, saldo=0):
-        self.titular = titular
-        self.saldo = saldo
+        self._titular = titular  
+        self._saldo = saldo  
+
+    def sacar(self, valor):
+        if valor > self._saldo:
+            raise SaldoInsuficienteError("Erro: Saldo insuficiente.")
+        self._saldo -= valor
+        print(f"Saque de R${valor:.2f} realizado com sucesso!")
 
     def depositar(self, valor):
         if valor > 0:
-            self.saldo += valor
+            self._saldo += valor
             print(f"Depósito de R${valor:.2f} realizado com sucesso!")
         else:
-            print("O valor do depósito deve ser positivo.")
+            print("Erro: O valor do depósito deve ser positivo.")
 
-    def sacar(self, valor):
-        if valor > self.saldo:
-            raise ValueError("Saldo insuficiente para saque.")
-        self.saldo -= valor
-        print(f"Saque de R${valor:.2f} realizado com sucesso!")
+    def transferir(self, destino, valor):
+        if valor > self._saldo:
+            raise SaldoInsuficienteError("Erro: Saldo insuficiente para a transferência.")
+        self._saldo -= valor
+        destino._saldo += valor
+        print(f"Transferência de R${valor:.2f} realizada com sucesso!")
 
     def __str__(self):
-        return f"Titular: {self.titular} | Saldo: R${self.saldo:.2f}"
-
-    def __eq__(self, other):
-        return self.saldo == other.saldo
-
-    def __lt__(self, other):
-        return self.saldo < other.saldo
+        return f"Titular: {self._titular} | Saldo: R${self._saldo:.2f}"

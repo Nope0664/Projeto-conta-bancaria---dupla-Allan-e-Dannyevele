@@ -1,21 +1,24 @@
+from usuario import Usuario
 from conta_corrente import ContaCorrente
 from conta_poupança import ContaPoupanca
+from exceçoes import SaldoInsuficienteError, LoginInvalidoError
 
-def criar_conta():
-    print("\n=== Criar Nova Conta ===")
-    titular = input("Digite o nome do titular: ")
+usuarios = {}
+
+def criar_conta(usuario):
+    print("\n=== Criar Conta ===")
     saldo = float(input("Digite o saldo inicial: "))
-    
+
     print("\nEscolha o tipo de conta:")
     print("1 - Conta Corrente")
     print("2 - Conta Poupança")
-    
+
     tipo = input("Opção: ")
 
     if tipo == "1":
-        conta = ContaCorrente(titular, saldo)
+        conta = ContaCorrente(usuario.nome, saldo)
     elif tipo == "2":
-        conta = ContaPoupanca(titular, saldo)
+        conta = ContaPoupanca(usuario.nome, saldo)
     else:
         print("Opção inválida!")
         return None
@@ -29,9 +32,10 @@ def operacoes_conta(conta):
         print("\n=== Operações Disponíveis ===")
         print("1 - Depositar")
         print("2 - Sacar")
-        print("3 - Mostrar Saldo")
-        print("4 - Sair")
-        
+        print("3 - Transferir")
+        print("4 - Mostrar Saldo")
+        print("5 - Sair")
+
         opcao = input("Escolha uma opção: ")
 
         if opcao == "1":
@@ -42,25 +46,58 @@ def operacoes_conta(conta):
             valor = float(input("Digite o valor do saque: "))
             try:
                 conta.sacar(valor)
-            except ValueError as e:
-                print(f"Erro: {e}")
+            except SaldoInsuficienteError as e:
+                print(e)
 
         elif opcao == "3":
-            print(conta)
+            cpf_destino = input("Digite o CPF do destinatário: ")
+            if cpf_destino in usuarios:
+                valor = float(input("Digite o valor da transferência: "))
+                try:
+                    conta.transferir(usuarios[cpf_destino], valor)
+                except SaldoInsuficienteError as e:
+                    print(e)
+            else:
+                print("Conta destinatária não encontrada.")
 
         elif opcao == "4":
-            print("Saindo do sistema...")
+            print(conta)
+
+        elif opcao == "5":
+            print("Saindo...")
             break
         else:
             print("Opção inválida!")
 
 def main():
     print("=== Bem-vindo ao Sistema Bancário ===")
-    
-    conta = criar_conta()
-    
-    if conta:
-        operacoes_conta(conta)
+
+    while True:
+        print("\n1 - Cadastrar Usuário")
+        print("2 - Fazer Login")
+        print("3 - Sair")
+
+        opcao = input("Escolha uma opção: ")
+
+        if opcao == "1":
+            usuario = Usuario.cadastrar()
+            if usuario:
+                usuarios[usuario.cpf] = usuario
+
+        elif opcao == "2":
+            try:
+                usuario = Usuario.login()
+                conta = criar_conta(usuario)
+                if conta:
+                    operacoes_conta(conta)
+            except LoginInvalidoError as e:
+                print(e)
+
+        elif opcao == "3":
+            print("Saindo...")
+            break
+        else:
+            print("Opção inválida!")
 
 if __name__ == "__main__":
     main()
