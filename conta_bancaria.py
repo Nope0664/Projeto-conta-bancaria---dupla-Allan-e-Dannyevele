@@ -1,103 +1,107 @@
-from usuario import Usuario
-from conta_corrente import ContaCorrente
-from conta_poupança import ContaPoupanca
-from exceçoes import SaldoInsuficienteError, LoginInvalidoError
 
-usuarios = {}
 
-def criar_conta(usuario):
-    print("\n=== Criar Conta ===")
-    saldo = float(input("Digite o saldo inicial: "))
+from banco import Banco
+from cliente import Cliente
+from validação import validar_cpf, validar_telefone, validar_email, validar_endereco
 
-    print("\nEscolha o tipo de conta:")
-    print("1 - Conta Corrente")
-    print("2 - Conta Poupança")
+def menu():
+    banco = Banco()
 
-    tipo = input("Opção: ")
-
-    if tipo == "1":
-        conta = ContaCorrente(usuario.nome, saldo)
-    elif tipo == "2":
-        conta = ContaPoupanca(usuario.nome, saldo)
-    else:
-        print("Opção inválida!")
-        return None
-
-    print("\nConta criada com sucesso!")
-    print(conta)
-    return conta
-
-def operacoes_conta(conta):
     while True:
-        print("\n=== Operações Disponíveis ===")
-        print("1 - Depositar")
-        print("2 - Sacar")
-        print("3 - Transferir")
-        print("4 - Mostrar Saldo")
-        print("5 - Sair")
-
+        print("\n=== Banco Interativo ===")
+        print("1 - Criar Conta")
+        print("2 - Acessar Conta")
+        print("3 - Transferir entre Contas")
+        print("4 - Sair")
         opcao = input("Escolha uma opção: ")
 
         if opcao == "1":
-            valor = float(input("Digite o valor do depósito: "))
-            conta.depositar(valor)
-
+            criar_conta(banco)
         elif opcao == "2":
-            valor = float(input("Digite o valor do saque: "))
-            try:
-                conta.sacar(valor)
-            except SaldoInsuficienteError as e:
-                print(e)
-
+            acessar_conta(banco)
         elif opcao == "3":
-            cpf_destino = input("Digite o CPF do destinatário: ")
-            if cpf_destino in usuarios:
-                valor = float(input("Digite o valor da transferência: "))
-                try:
-                    conta.transferir(usuarios[cpf_destino], valor)
-                except SaldoInsuficienteError as e:
-                    print(e)
-            else:
-                print("Conta destinatária não encontrada.")
-
+            transferir_contas(banco)
         elif opcao == "4":
-            print(conta)
-
-        elif opcao == "5":
             print("Saindo...")
             break
         else:
-            print("Opção inválida!")
+            print("Opção inválida, tente novamente.")
 
-def main():
-    print("=== Bem-vindo ao Sistema Bancário ===")
+def criar_conta(banco):
+    print("\n--- Criar Conta ---")
+    
+    nome = input("Digite o nome do titular: ")
+    cpf = input("Digite o CPF (somente números): ")
+    telefone = input("Digite o telefone (somente números): ")
+    email = input("Digite o e-mail: ")
+    endereco = input("Digite o endereço (rua, número, cidade): ")
+    
+    
+    erros = []
+    if not validar_cpf(cpf):
+        erros.append("CPF inválido! Deve conter exatamente 11 números.")
+    if not validar_telefone(telefone):
+        erros.append("Telefone inválido! Deve conter pelo menos 8 dígitos numéricos.")
+    if not validar_email(email):
+        erros.append("E-mail inválido! Deve conter um '@' e um domínio válido.")
+    if not validar_endereco(endereco):
+        erros.append("Endereço inválido! Deve conter pelo menos 5 caracteres.")
+    
+    if erros:
+        print("\nErro ao criar conta:")
+        for erro in erros:
+            print(erro)
+    else:
+        tipo_conta = input("Tipo de conta (corrente/poupanca): ").lower()
+        if tipo_conta not in ["corrente", "poupanca"]:
+            print("Tipo de conta inválido.")
+            return
+        
+        numero_conta = str(len(banco.contas) + 1000)  
+        cliente = Cliente(nome, cpf, telefone, email, endereco)
+        
+        # Perguntar o saldo inicial
+        saldo_inicial = input("Digite o saldo inicial da conta: R$")
+        saldo_inicial = float(saldo_inicial.replace(",", "."))  # Substitui vírgula por ponto e converte para float
+        
+        banco.criar_conta(numero_conta, tipo_conta, cliente, saldo_inicial)
+        
+        print(f"\nConta {tipo_conta} criada com sucesso para {nome}!")
+        print(f"Número da conta: {numero_conta}")
+        print(f"Saldo inicial: R${saldo_inicial:.2f}")
 
-    while True:
-        print("\n1 - Cadastrar Usuário")
-        print("2 - Fazer Login")
-        print("3 - Sair")
+def acessar_conta(banco):
+    print("\n--- Acessar Conta ---")
+    numero_conta = input("Digite o número da conta: ")
+    conta = banco.buscar_conta(numero_conta)
+    
+    if conta:
+        print(f"Conta encontrada! Titular: {conta.cliente.nome}")
+        print(f"Tipo de conta: {conta.tipo}")
+        print(f"Saldo: R${conta.saldo:.2f}")
+    else:
+        print("Conta não encontrada.")
 
-        opcao = input("Escolha uma opção: ")
-
-        if opcao == "1":
-            usuario = Usuario.cadastrar()
-            if usuario:
-                usuarios[usuario.cpf] = usuario
-
-        elif opcao == "2":
-            try:
-                usuario = Usuario.login()
-                conta = criar_conta(usuario)
-                if conta:
-                    operacoes_conta(conta)
-            except LoginInvalidoError as e:
-                print(e)
-
-        elif opcao == "3":
-            print("Saindo...")
-            break
+def transferir_contas(banco):
+    print("\n--- Transferir entre Contas ---")
+    numero_conta_origem = input("Digite o número da conta de origem: ")
+    numero_conta_destino = input("Digite o número da conta de destino: ")
+    valor = input("Digite o valor da transferência: R$")
+    valor = float(valor.replace(",", "."))  
+    
+    conta_origem = banco.buscar_conta(numero_conta_origem)
+    conta_destino = banco.buscar_conta(numero_conta_destino)
+    
+    if conta_origem and conta_destino:
+        if conta_origem.saldo >= valor:
+            banco.transferir(conta_origem, conta_destino, valor)
+            print(f"Transferência de R${valor:.2f} realizada com sucesso!")
+            print(f"Novo saldo de {conta_origem.cliente.nome}: R${conta_origem.saldo:.2f}")
+            print(f"Novo saldo de {conta_destino.cliente.nome}: R${conta_destino.saldo:.2f}")
         else:
-            print("Opção inválida!")
+            print("Saldo insuficiente na conta de origem.")
+    else:
+        print("Uma ou ambas as contas não foram encontradas.")
 
 if __name__ == "__main__":
-    main()
+    menu()

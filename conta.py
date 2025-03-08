@@ -1,29 +1,64 @@
-from exceçoes import SaldoInsuficienteError
+from abc import ABC, abstractmethod
 
-class Conta:
-    def __init__(self, titular, saldo=0):
-        self._titular = titular  
-        self._saldo = saldo  
+class Conta(ABC):
+    def __init__(self, numero, cliente, tipo):
+        self.__numero = numero
+        self.__cliente = cliente
+        self.__saldo = 0  
+        self.__tipo = tipo  
 
+    @abstractmethod
     def sacar(self, valor):
-        if valor > self._saldo:
-            raise SaldoInsuficienteError("Erro: Saldo insuficiente.")
-        self._saldo -= valor
-        print(f"Saque de R${valor:.2f} realizado com sucesso!")
+        pass
 
+    @abstractmethod
     def depositar(self, valor):
-        if valor > 0:
-            self._saldo += valor
-            print(f"Depósito de R${valor:.2f} realizado com sucesso!")
-        else:
-            print("Erro: O valor do depósito deve ser positivo.")
+        pass
 
-    def transferir(self, destino, valor):
-        if valor > self._saldo:
-            raise SaldoInsuficienteError("Erro: Saldo insuficiente para a transferência.")
-        self._saldo -= valor
-        destino._saldo += valor
-        print(f"Transferência de R${valor:.2f} realizada com sucesso!")
+    def get_numero(self):
+        return self.__numero
+
+    def get_cliente(self):
+        return self.__cliente
+
+    def get_saldo(self):
+        return self.__saldo
+
+    def set_saldo(self, valor):
+        self.__saldo = valor
+
+    def get_tipo(self):
+        return self.__tipo
 
     def __str__(self):
-        return f"Titular: {self._titular} | Saldo: R${self._saldo:.2f}"
+        return f"Conta {self.__tipo.capitalize()} - Número: {self.__numero}, Titular: {self.__cliente.get_nome()}, Saldo: {self.__saldo}"
+
+class ContaCorrente(Conta):
+    def __init__(self, numero, cliente):
+        super().__init__(numero, cliente, "corrente")
+
+    def sacar(self, valor):
+        if valor > self.get_saldo():
+            print("Saldo insuficiente!")
+        else:
+            self.set_saldo(self.get_saldo() - valor)
+            print(f"Saque de R${valor} realizado com sucesso.")
+
+    def depositar(self, valor):
+        self.set_saldo(self.get_saldo() + valor)
+        print(f"Depósito de R${valor} realizado com sucesso.")
+
+class ContaPoupanca(Conta):
+    def __init__(self, numero, cliente):
+        super().__init__(numero, cliente, "poupanca")
+
+    def sacar(self, valor):
+        if valor > self.get_saldo():
+            print("Saldo insuficiente!")
+        else:
+            self.set_saldo(self.get_saldo() - valor)
+            print(f"Saque de R${valor} realizado com sucesso.")
+
+    def depositar(self, valor):
+        self.set_saldo(self.get_saldo() + valor)
+        print(f"Depósito de R${valor} realizado com sucesso.")
